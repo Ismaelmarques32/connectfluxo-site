@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ConnectFluxo — Automação Inteligente</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0a0812;
+      --bg-soft:#120d20;
+      --surface:#161026;
+      --surface-2:#1b1430;
+      --card:#140f24cc;
+      --text:#f7f4ff;
+      --muted:#b7accf;
+      --line:rgba(181,146,255,.16);
+      --line-strong:rgba(181,146,255,.28);
+      --purple:#8f5cff;
+      --purple-2:#a97cff;
+      --purple-3:#c6a8ff;
+      --purple-4:#e6dbff;
+      --accent:#6d3df0;
+      --success:#70d6b0;
+      --shadow:0 24px 80px rgba(5,4,10,.45);
+      --radius:28px;
+      --container:min(1180px, 92vw);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'Plus Jakarta Sans',sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(169,124,255,.18), transparent 28%),
+        radial-gradient(circle at 85% 10%, rgba(109,61,240,.18), transparent 22%),
+        linear-gradient(180deg, #0a0812 0%, #0b0813 38%, #0e0a18 100%);
+      color:var(--text);
+      line-height:1.65;
+      overflow-x:hidden;
+      position:relative;
+    }
+
+    #cur{position:fixed;width:12px;height:12px;background:linear-gradient(135deg,var(--purple-2),var(--purple));border-radius:50%;pointer-events:none;z-index:9999;mix-blend-mode:screen;box-shadow:0 0 24px rgba(143,92,255,.55);transform:translate(-50%,-50%)}
+    #cur-r{position:fixed;width:40px;height:40px;border:1px solid rgba(169,124,255,.45);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .35s cubic-bezier(.16,1,.3,1),height .35s cubic-bezier(.16,1,.3,1),border-color .3s ease}
+    #bg-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.9;pointer-events:none}
+    nav.stuck{background:rgba(10,8,18,.88);border-bottom-color:rgba(181,146,255,.14);box-shadow:0 10px 40px rgba(0,0,0,.18)}
+    .hero > .hero-grid,.hero > .container{position:relative;z-index:1}
+
+
+    .bg-aurora{
+      position:fixed;
+      inset:0;
+      z-index:-2;
+      overflow:hidden;
+      pointer-events:none;
+    }
+    .bg-aurora::before,
+    .bg-aurora::after{
+      content:'';
+      position:absolute;
+      width:46vw;
+      height:46vw;
+      min-width:340px;
+      min-height:340px;
+      border-radius:50%;
+      filter:blur(80px);
+      opacity:.18;
+      animation:floatOrb 18s ease-in-out infinite alternate;
+    }
+    .bg-aurora::before{
+      top:-12vw;
+      left:-8vw;
+      background:radial-gradient(circle, rgba(164,118,255,.9) 0%, rgba(143,92,255,.32) 35%, rgba(143,92,255,0) 70%);
+    }
+    .bg-aurora::after{
+      right:-10vw;
+      top:18vh;
+      background:radial-gradient(circle, rgba(112,214,176,.35) 0%, rgba(109,61,240,.4) 30%, rgba(109,61,240,0) 72%);
+      animation-duration:24s;
+    }
+    .bg-aurora .orb{
+      position:absolute;
+      border-radius:50%;
+      filter:blur(70px);
+      opacity:.14;
+      pointer-events:none;
+    }
+    .bg-aurora .orb-1{
+      width:30vw;height:30vw;min-width:260px;min-height:260px;
+      left:14%;top:52%;
+      background:radial-gradient(circle, rgba(198,168,255,.65) 0%, rgba(198,168,255,0) 70%);
+      animation:floatOrb 26s ease-in-out infinite;
+    }
+    .bg-aurora .orb-2{
+      width:24vw;height:24vw;min-width:220px;min-height:220px;
+      right:10%;bottom:8%;
+      background:radial-gradient(circle, rgba(143,92,255,.58) 0%, rgba(143,92,255,0) 72%);
+      animation:floatOrbReverse 28s ease-in-out infinite;
+    }
+    .bg-grid{
+      position:fixed;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      opacity:.22;
+      background-image:
+        linear-gradient(rgba(181,146,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(181,146,255,.06) 1px, transparent 1px);
+      background-size:72px 72px;
+      mask-image:radial-gradient(circle at center, rgba(0,0,0,.9), transparent 82%);
+    }
+
+    @keyframes floatOrb{
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(4vw,3vh,0) scale(1.08)}
+      100%{transform:translate3d(-3vw,8vh,0) scale(.96)}
+    }
+    @keyframes floatOrbReverse{
+      0%{transform:translate3d(0,0,0) scale(1)}
+      50%{transform:translate3d(-4vw,-3vh,0) scale(.94)}
+      100%{transform:translate3d(3vw,-7vh,0) scale(1.06)}
+    }
+
+    a{text-decoration:none;color:inherit}
+    img{max-width:100%;display:block}
+    .container{width:var(--container);margin:0 auto}
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:.7rem;
+      padding:.5rem .9rem;border:1px solid var(--line);
+      background:rgba(198,168,255,.06);border-radius:999px;
+      color:var(--purple-3);font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    }
+    .eyebrow::before{content:'';width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--purple-2),var(--purple))}
+
+    .section{padding:110px 0}
+    .section-head{max-width:700px;margin-bottom:42px}
+    .section-head h2{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2.2rem,4vw,3.8rem);
+      line-height:1.08;
+      letter-spacing:-.02em;
+      margin:18px 0 14px;
+    }
+    .section-head p{color:var(--muted);font-size:1.03rem;line-height:1.85}
+
+    nav{
+      position:sticky;top:0;z-index:50;
+      backdrop-filter:blur(18px);
+      background:rgba(10,8,18,.7);
+      border-bottom:1px solid rgba(181,146,255,.08);
+    }
+    .nav-inner{
+      width:var(--container);margin:0 auto;
+      min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:24px;
+    }
+    .brand{display:flex;align-items:center;gap:.85rem;font-weight:800;font-size:1.15rem}
+    .brand-mark{
+      width:40px;height:40px;border-radius:14px;
+      background:linear-gradient(135deg,var(--purple),var(--purple-2));
+      box-shadow:0 10px 26px rgba(143,92,255,.28);
+      position:relative;
+    }
+    .brand-mark::after{
+      content:'';position:absolute;inset:8px;border-radius:10px;
+      border:1px solid rgba(255,255,255,.28);
+    }
+    .brand span small{display:block;color:var(--muted);font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+    .nav-links{display:flex;gap:28px;color:var(--muted);font-size:.95rem;font-weight:500}
+    .nav-links a:hover{color:var(--text)}
+    .nav-cta{
+      padding:.95rem 1.4rem;border-radius:999px;
+      border:1px solid var(--line-strong);
+      background:linear-gradient(135deg, rgba(169,124,255,.16), rgba(143,92,255,.08));
+      color:var(--text);font-weight:700;
+    }
+
+    .hero{padding:80px 0 56px;position:relative;overflow:hidden}
+    .hero-grid{
+      width:var(--container);margin:0 auto;
+      display:grid;grid-template-columns:1.08fr .92fr;gap:48px;align-items:center;
+    }
+    .hero-copy{max-width:700px}
+    .hero-copy h1{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(3rem,5.6vw,5.5rem);
+      line-height:1.03;
+      letter-spacing:-.03em;
+      margin:22px 0 20px;
+      text-wrap:balance;
+    }
+    .hero-copy h1 .accent{background:linear-gradient(135deg,var(--purple-3),var(--purple-2) 55%,#f0e9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero-copy p{font-size:1.08rem;color:var(--muted);max-width:61ch;line-height:1.9}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:16px;margin-top:34px}
+    .btn-primary,.btn-secondary{
+      display:inline-flex;align-items:center;justify-content:center;min-height:56px;
+      padding:0 24px;border-radius:999px;font-weight:700;transition:.25s ease;
+    }
+    .btn-primary{
+      background:linear-gradient(135deg,var(--purple),var(--accent));
+      color:#fff;box-shadow:0 18px 40px rgba(109,61,240,.35);
+    }
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 24px 48px rgba(109,61,240,.42)}
+    .btn-secondary{
+      border:1px solid var(--line-strong);
+      color:var(--text);background:rgba(255,255,255,.02)
+    }
+    .hero-proof{
+      display:flex;flex-wrap:wrap;gap:18px 26px;margin-top:34px;color:var(--muted);font-size:.95rem
+    }
+    .hero-proof strong{color:var(--text)}
+
+    .hero-card{
+      position:relative;padding:22px;
+      border-radius:32px;
+      background:linear-gradient(180deg, rgba(26,20,46,.96), rgba(17,12,31,.95));
+      border:1px solid rgba(181,146,255,.18);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hero-card::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(circle at top right, rgba(169,124,255,.22), transparent 28%);
+      pointer-events:none;
+    }
+    .dashboard{
+      border-radius:24px;overflow:hidden;border:1px solid rgba(181,146,255,.1);
+      background:rgba(255,255,255,.02)
+    }
+    .dash-top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid rgba(181,146,255,.08)}
+    .dash-top strong{font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--purple-3)}
+    .status{display:flex;align-items:center;gap:.5rem;color:#d7ffee;font-size:.82rem}
+    .status::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--success);box-shadow:0 0 0 6px rgba(112,214,176,.08)}
+    .dash-body{padding:18px;display:grid;gap:18px}
+    .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .mini{
+      padding:18px;border-radius:20px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)
+    }
+    .mini b{display:block;font-size:1.35rem;margin-bottom:4px;color:var(--purple-4)}
+    .mini span{font-size:.8rem;color:var(--muted)}
+    .chat-box,.flow-box{
+      padding:18px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)
+    }
+    .chat-msg{max-width:85%;padding:12px 14px;border-radius:16px;font-size:.92rem;line-height:1.6;margin-bottom:10px}
+    .chat-msg.bot{background:rgba(169,124,255,.12);color:var(--text);border-top-left-radius:4px}
+    .chat-msg.user{margin-left:auto;background:rgba(255,255,255,.05);color:var(--muted);border-top-right-radius:4px}
+    .flow-list{display:grid;gap:12px}
+    .flow-item{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.94rem}
+    .flow-item i{
+      width:28px;height:28px;border-radius:10px;display:grid;place-items:center;
+      background:rgba(143,92,255,.14);color:var(--purple-3);font-style:normal;font-weight:700
+    }
+
+    .stats-strip{padding:10px 0 0}
+    .stats-grid{width:var(--container);margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .stat-card{
+      padding:28px;border-radius:24px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)
+    }
+    .stat-card b{display:block;font-size:2rem;color:var(--purple-4);margin-bottom:6px}
+    .stat-card span{color:var(--muted);font-size:.95rem}
+
+    .problem-grid,.steps-grid,.benefits-grid,.segments-grid,.faq-grid,.testimonials-grid,.cta-box{
+      width:var(--container);margin:0 auto;
+    }
+
+    .problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    .pain,.gain{
+      padding:34px;border-radius:28px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)
+    }
+    .pain h3,.gain h3{font-size:1.2rem;margin-bottom:16px}
+    .pain ul,.gain ul{display:grid;gap:14px;list-style:none}
+    .pain li,.gain li{color:var(--muted);padding-left:28px;position:relative}
+    .pain li::before,.gain li::before{content:'';position:absolute;left:0;top:.62rem;width:12px;height:12px;border-radius:50%}
+    .pain li::before{background:linear-gradient(135deg,#ff8a8a,#ff5c8d)}
+    .gain li::before{background:linear-gradient(135deg,var(--purple-2),var(--success))}
+
+    .steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+    .step{
+      padding:30px;border-radius:28px;background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(181,146,255,.08)
+    }
+    .step .num{
+      width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
+      background:rgba(143,92,255,.14);color:var(--purple-3);font-weight:800;margin-bottom:18px
+    }
+    .step h3{font-size:1.15rem;margin-bottom:10px}
+    .step p{color:var(--muted);font-size:.96rem;line-height:1.8}
+
+    .benefits-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .benefit{
+      padding:26px;border-radius:24px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)
+    }
+    .benefit h3{font-size:1.05rem;margin-bottom:8px}
+    .benefit p{color:var(--muted);font-size:.94rem;line-height:1.78}
+
+    .segments-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+    .segment{
+      padding:30px;border-radius:30px;background:linear-gradient(180deg, rgba(169,124,255,.06), rgba(255,255,255,.02));border:1px solid rgba(181,146,255,.1)
+    }
+    .segment small{display:inline-block;color:var(--purple-3);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+    .segment h3{font-size:1.2rem;margin-bottom:10px}
+    .segment p{color:var(--muted);line-height:1.82}
+
+    .testi-wrap{position:relative;overflow:hidden}
+    .testi-wrap::before,.testi-wrap::after{
+      content:'';position:absolute;inset:0;z-index:10;width:180px;pointer-events:none;
+    }
+    .testi-wrap::before{left:0;background:linear-gradient(to right,var(--bg),transparent)}
+    .testi-wrap::after{right:0;background:linear-gradient(to left,var(--bg),transparent)}
+    .testi-track{
+      display:flex;gap:20px;width:max-content;
+      animation:testiLoop 48s linear infinite;
+    }
+    .testi-track:hover{animation-play-state:paused}
+    @keyframes testiLoop{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+    .testimonial{
+      width:360px;min-width:360px;flex-shrink:0;
+      padding:28px;border-radius:26px;
+      background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08);
+      transition:border-color .3s;
+    }
+    .testimonial:hover{border-color:rgba(143,92,255,.3)}
+    .testi-stars{display:flex;gap:3px;margin-bottom:14px}
+    .testi-stars span{color:#f59e0b;font-size:.8rem}
+    .testi-quote{
+      font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:700;
+      color:var(--purple);opacity:.2;line-height:.7;margin-bottom:10px;
+    }
+    .testimonial p{color:#ddd4ef;line-height:1.9;font-size:.92rem;margin-bottom:20px;font-style:italic}
+    .testi-author{display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid rgba(181,146,255,.08)}
+    .testi-av{
+      width:40px;height:40px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,var(--purple),var(--purple-2));
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:.82rem;color:#fff;
+    }
+    .testi-name{font-weight:700;font-size:.88rem;display:block}
+    .testi-role{color:var(--muted);font-size:.76rem;margin-top:2px;display:block}
+
+    .faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .faq-item{padding:24px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(181,146,255,.08)}
+    .faq-item h3{font-size:1rem;margin-bottom:8px}
+    .faq-item p{color:var(--muted);line-height:1.78;font-size:.94rem}
+
+    .cta-box{
+      padding:42px;border-radius:34px;
+      background:linear-gradient(135deg, rgba(143,92,255,.18), rgba(109,61,240,.14) 48%, rgba(255,255,255,.04));
+      border:1px solid rgba(181,146,255,.16);
+      display:grid;grid-template-columns:1.2fr .8fr;gap:30px;align-items:center;
+      box-shadow:var(--shadow)
+    }
+    .cta-copy h2{font-family:'Playfair Display',serif;font-size:clamp(2.2rem,4vw,3.6rem);line-height:1.08;margin-bottom:14px}
+    .cta-copy p{color:#ece5fb;opacity:.88;line-height:1.85;max-width:52ch}
+    .cta-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:flex-end}
+
+    footer{padding:34px 0 48px;color:var(--muted)}
+    .footer-inner{width:var(--container);margin:0 auto;display:flex;justify-content:space-between;gap:20px;align-items:center;border-top:1px solid rgba(181,146,255,.08);padding-top:28px}
+
+
+    /* ── LEAD FORM ── */
+    .lead-section{
+      padding:110px 0;background:var(--bg);
+    }
+    .lead-inner{
+      width:var(--container);margin:0 auto;
+      display:grid;grid-template-columns:1fr 1fr;gap:6rem;align-items:center;
+    }
+    .lead-copy h2{
+      font-family:'Playfair Display',serif;
+      font-size:clamp(2rem,3.5vw,3.2rem);
+      line-height:1.1;letter-spacing:-.02em;margin-bottom:1rem;
+    }
+    .lead-copy h2 em{font-style:italic;color:var(--purple-3)}
+    .lead-copy p{color:var(--muted);font-size:1rem;line-height:1.85;margin-bottom:2rem}
+    .lead-proof{display:flex;flex-direction:column;gap:.75rem}
+    .lead-proof-item{
+      display:flex;align-items:center;gap:.75rem;
+      font-size:.88rem;color:var(--muted);
+    }
+    .lead-proof-item::before{
+      content:'';width:20px;height:20px;border-radius:50%;flex-shrink:0;
+      background:rgba(139,92,246,.15);border:1px solid var(--line);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 6l3 3 5-5' stroke='%23a78bfa' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:center;background-size:12px;
+    }
+
+    /* FORM CARD */
+    .lead-form-card{
+      background:linear-gradient(180deg,rgba(26,20,46,.98),rgba(17,12,31,.97));
+      border:1px solid rgba(181,146,255,.18);border-radius:28px;
+      padding:2.5rem;box-shadow:0 32px 80px rgba(0,0,0,.4),0 0 60px rgba(109,61,240,.06);
+      position:relative;overflow:hidden;
+    }
+    .lead-form-card::before{
+      content:'';position:absolute;top:-60px;right:-60px;
+      width:240px;height:240px;border-radius:50%;
+      background:radial-gradient(circle,rgba(139,92,246,.1),transparent 70%);
+      pointer-events:none;
+    }
+    .lead-form-card h3{
+      font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;
+      margin-bottom:.4rem;
+    }
+    .lead-form-card p{font-size:.85rem;color:var(--muted);margin-bottom:1.75rem;line-height:1.6}
+    .form-group{margin-bottom:1.1rem}
+    .form-group label{
+      display:block;font-size:.75rem;font-weight:700;
+      letter-spacing:.08em;text-transform:uppercase;
+      color:var(--purple-3);margin-bottom:.5rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea{
+      width:100%;padding:.85rem 1rem;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(181,146,255,.14);
+      border-radius:12px;
+      color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:.92rem;
+      transition:border-color .25s,box-shadow .25s;outline:none;
+      appearance:none;-webkit-appearance:none;
+    }
+    .form-group input::placeholder,
+    .form-group textarea::placeholder{color:var(--muted);opacity:.6}
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus{
+      border-color:rgba(139,92,246,.5);
+      box-shadow:0 0 0 3px rgba(139,92,246,.08);
+    }
+    .form-group select{
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a78bfa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 1rem center;
+      background-size:12px;padding-right:2.5rem;cursor:pointer;
+      background-color:rgba(255,255,255,.04);
+    }
+    .form-group select option{background:#1b1430;color:var(--text)}
+    .form-group textarea{resize:none;height:90px;line-height:1.6}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .btn-submit{
+      width:100%;padding:1rem;border:none;cursor:pointer;
+      background:linear-gradient(135deg,var(--purple),var(--accent));
+      color:#fff;font-family:'Plus Jakarta Sans',sans-serif;
+      font-weight:700;font-size:.95rem;border-radius:12px;
+      box-shadow:0 8px 28px rgba(109,61,240,.35);
+      transition:transform .2s,box-shadow .2s;margin-top:.5rem;
+      letter-spacing:.02em;
+    }
+    .btn-submit:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(109,61,240,.48)}
+    .btn-submit:active{transform:translateY(0)}
+    .form-note{text-align:center;font-size:.72rem;color:var(--muted);margin-top:.85rem;opacity:.7}
+
+    /* WHATSAPP FLUTUANTE */
+    .wa-float{
+      position:fixed;bottom:2rem;right:2rem;z-index:400;
+      display:flex;align-items:center;gap:.75rem;
+      background:#25D366;color:#fff;
+      padding:.85rem 1.4rem .85rem 1rem;
+      border-radius:50px;
+      box-shadow:0 8px 32px rgba(37,211,102,.4);
+      text-decoration:none;font-weight:700;font-size:.88rem;
+      transition:transform .2s,box-shadow .2s;
+      animation:waPulse 3s ease-in-out infinite;
+    }
+    .wa-float:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 12px 40px rgba(37,211,102,.55)}
+    .wa-float svg{width:22px;height:22px;fill:currentColor;flex-shrink:0}
+    @keyframes waPulse{
+      0%,100%{box-shadow:0 8px 32px rgba(37,211,102,.4)}
+      50%{box-shadow:0 8px 40px rgba(37,211,102,.65),0 0 0 8px rgba(37,211,102,.08)}
+    }
+
+    /* SUCCESS STATE */
+    .form-success{
+      display:none;text-align:center;padding:2rem 1rem;
+    }
+    .form-success .success-icon{
+      width:64px;height:64px;border-radius:50%;
+      background:rgba(139,92,246,.15);border:1px solid var(--line);
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 1.25rem;font-size:1.8rem;
+    }
+    .form-success h4{font-size:1.3rem;margin-bottom:.5rem}
+    .form-success p{color:var(--muted);font-size:.9rem;line-height:1.7}
+
+    @media(max-width:1080px){.lead-inner{grid-template-columns:1fr;gap:3rem}}
+    @media(max-width:640px){.form-row{grid-template-columns:1fr}.wa-float span{display:none}.wa-float{padding:.9rem}}
+
+    @media (prefers-reduced-motion: reduce){
+      .bg-aurora::before,
+      .bg-aurora::after,
+      .bg-aurora .orb{
+        animation:none;
+      }
+    }
+
+    @media (max-width: 1080px){
+      .hero-grid,.problem-grid,.cta-box{grid-template-columns:1fr}
+      .steps-grid,.benefits-grid,.testimonials-grid{grid-template-columns:1fr 1fr}
+      .segments-grid,.faq-grid{grid-template-columns:1fr}
+      .cta-actions{justify-content:flex-start}
+    }
+
+    @media (max-width: 820px){
+      .nav-links{display:none}
+      .hero{padding-top:42px}
+      .stats-grid,.steps-grid,.benefits-grid,.testimonials-grid{grid-template-columns:1fr}
+      .mini-grid{grid-template-columns:1fr}
+      .hero-copy h1{font-size:clamp(2.5rem,11vw,4rem)}
+      .section{padding:84px 0}
+      .section-head h2,.cta-copy h2{line-height:1.12}
+      .footer-inner{flex-direction:column;align-items:flex-start}
+    }
+
+    /* ─── REVEAL ANIMATIONS ─── */
+    .reveal{
+      opacity:0;
+      transform:translateY(32px);
+      transition:opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+    }
+    .reveal.is-visible{
+      opacity:1;
+      transform:translateY(0);
+    }
+
+    /* ─── HERO ENTER ─── */
+    .hero-copy{animation:heroFadeUp .9s .1s cubic-bezier(.16,1,.3,1) both}
+    .hero-card{animation:heroFadeUp .9s .25s cubic-bezier(.16,1,.3,1) both}
+    @keyframes heroFadeUp{
+      from{opacity:0;transform:translateY(40px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    /* ─── STAT CARDS STAGGER ─── */
+    .stat-card:nth-child(1){animation:cardIn .7s .05s cubic-bezier(.16,1,.3,1) both}
+    .stat-card:nth-child(2){animation:cardIn .7s .15s cubic-bezier(.16,1,.3,1) both}
+    .stat-card:nth-child(3){animation:cardIn .7s .25s cubic-bezier(.16,1,.3,1) both}
+    .stat-card:nth-child(4){animation:cardIn .7s .35s cubic-bezier(.16,1,.3,1) both}
+    @keyframes cardIn{
+      from{opacity:0;transform:translateY(24px) scale(.97)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    /* ─── CHAT BUBBLE TYPING ─── */
+    .chat-msg.bot:nth-child(1){animation:msgIn .5s .2s ease both}
+    .chat-msg.user:nth-child(2){animation:msgIn .5s .6s ease both}
+    .chat-msg.bot:nth-child(3){animation:msgIn .5s 1s ease both}
+    @keyframes msgIn{
+      from{opacity:0;transform:translateX(-12px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+    .chat-msg.user{animation-name:msgInRight!important}
+    @keyframes msgInRight{
+      from{opacity:0;transform:translateX(12px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+
+    /* ─── FLOW ITEMS STAGGER ─── */
+    .flow-item:nth-child(1){animation:flowIn .5s .4s ease both}
+    .flow-item:nth-child(2){animation:flowIn .5s .6s ease both}
+    .flow-item:nth-child(3){animation:flowIn .5s .8s ease both}
+    @keyframes flowIn{
+      from{opacity:0;transform:translateX(-10px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+
+    /* ─── MINI CARDS STAGGER ─── */
+    .mini:nth-child(1){animation:cardIn .6s .1s cubic-bezier(.16,1,.3,1) both}
+    .mini:nth-child(2){animation:cardIn .6s .2s cubic-bezier(.16,1,.3,1) both}
+    .mini:nth-child(3){animation:cardIn .6s .3s cubic-bezier(.16,1,.3,1) both}
+
+    /* ─── PULSE STATUS ─── */
+    .status::before{
+      animation:pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(112,214,176,.5)}
+      50%{box-shadow:0 0 0 8px rgba(112,214,176,0)}
+    }
+
+    /* ─── BRAND MARK GLOW ─── */
+    .brand-mark{animation:glowPulse 3s ease-in-out infinite}
+    @keyframes glowPulse{
+      0%,100%{box-shadow:0 10px 26px rgba(143,92,255,.28)}
+      50%{box-shadow:0 10px 36px rgba(143,92,255,.5)}
+    }
+
+    /* ─── EYEBROW DOT BLINK ─── */
+    .eyebrow::before{animation:eyeBlink 2.5s ease-in-out infinite}
+    @keyframes eyeBlink{
+      0%,100%{opacity:1;transform:scale(1)}
+      50%{opacity:.4;transform:scale(.7)}
+    }
+
+    /* ─── SEGMENT / BENEFIT / STEP HOVER ─── */
+    .segment,.benefit,.step,.faq-item,.testimonial{
+      transition:border-color .3s, transform .3s, box-shadow .3s;
+    }
+    .segment:hover,.benefit:hover,.step:hover{
+      border-color:rgba(143,92,255,.3);
+      transform:translateY(-4px);
+      box-shadow:0 20px 50px rgba(109,61,240,.15);
+    }
+    .faq-item:hover{
+      border-color:rgba(143,92,255,.25);
+      transform:translateY(-2px);
+    }
+    .testimonial:hover{
+      border-color:rgba(143,92,255,.25);
+    }
+
+    /* ─── CTA BOX GLOW ─── */
+    .cta-box{
+      animation:ctaGlow 4s ease-in-out infinite;
+    }
+    @keyframes ctaGlow{
+      0%,100%{box-shadow:0 24px 80px rgba(5,4,10,.45)}
+      50%{box-shadow:0 24px 80px rgba(5,4,10,.45), 0 0 80px rgba(109,61,240,.12)}
+    }
+
+  </style>
+</head>
+<body>
+<canvas id="bg-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;opacity:.85;pointer-events:none"></canvas>
+<div id="cur"></div>
+<div id="cur-r"></div>
+  <div class="bg-aurora" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+  </div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <nav>
+    <div class="nav-inner">
+      <a href="#inicio" class="brand" style="display:flex;align-items:center;gap:.7rem;text-decoration:none">
+        <svg width="44" height="44" viewBox="0 0 124 124" style="display:block">
+  <circle cx="62" cy="62" r="34" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity=".18">
+    <animate attributeName="r" values="34;40;34" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".18;.04;.18" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="62" cy="62" r="46" fill="none" stroke="#a78bfa" stroke-width=".8" opacity=".09">
+    <animate attributeName="r" values="46;54;46" dur="3s" begin=".5s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values=".09;.01;.09" dur="3s" begin=".5s" repeatCount="indefinite"/>
+  </circle>
+  <path d="M 21 62 Q 21 22 62 22 L 62 49" stroke="#a78bfa" stroke-width="3.5" stroke-linecap="round" fill="none" opacity=".35"/>
+  <path d="M 21 62 Q 21 102 56 108" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" fill="none" opacity=".2"/>
+  <line x1="21" y1="62" x2="49" y2="62" stroke="#a78bfa" stroke-width="6.5" stroke-linecap="round"/>
+  <line x1="62" y1="49" x2="62" y2="19" stroke="#a78bfa" stroke-width="6" stroke-linecap="round"/>
+  <line x1="72" y1="54" x2="98" y2="30" stroke="#a78bfa" stroke-width="5.5" stroke-linecap="round"/>
+  <line x1="75" y1="62" x2="99" y2="62" stroke="#8b5cf6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 62 75 Q 44 90 38 103" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round" fill="none" opacity=".5"/>
+  <defs>
+    <path id="le1" d="M 34 62 L 49 62"/>
+    <path id="le2" d="M 62 49 L 62 19"/>
+    <path id="le3" d="M 72 54 L 98 30"/>
+    <path id="le4" d="M 75 62 L 99 62"/>
+    <path id="le5" d="M 62 75 Q 44 88 38 100"/>
+  </defs>
+  <circle r="4" fill="#ede9fe" opacity=".95"><animateMotion dur="1.5s" repeatCount="indefinite" begin="0s"><mpath href="#le1"/></animateMotion></circle>
+  <circle r="3.5" fill="#c4b5fd" opacity=".9"><animateMotion dur="1.2s" repeatCount="indefinite" begin=".25s"><mpath href="#le2"/></animateMotion></circle>
+  <circle r="3" fill="#c4b5fd" opacity=".85"><animateMotion dur="1.4s" repeatCount="indefinite" begin=".6s"><mpath href="#le3"/></animateMotion></circle>
+  <circle r="2.8" fill="#a78bfa" opacity=".8"><animateMotion dur="1.3s" repeatCount="indefinite" begin=".95s"><mpath href="#le4"/></animateMotion></circle>
+  <circle r="2.5" fill="#a78bfa" opacity=".65"><animateMotion dur="1.6s" repeatCount="indefinite" begin="1.2s"><mpath href="#le5"/></animateMotion></circle>
+  <!-- Node esquerdo -->
+  <g><circle cx="21" cy="62" r="18" fill="#8b5cf6" opacity=".12"/><circle cx="21" cy="62" r="13" fill="#8b5cf6"/><circle cx="21" cy="62" r="7.5" fill="#07040f"/><circle cx="21" cy="62" r="3.2" fill="#a78bfa"/></g>
+  <!-- Node topo -->
+  <g><circle cx="62" cy="19" r="11.5" fill="#8b5cf6"/><circle cx="62" cy="19" r="6.5" fill="#07040f"/><circle cx="62" cy="19" r="2.8" fill="#a78bfa"/></g>
+  <!-- Node direita topo -->
+  <g><circle cx="99" cy="30" r="9" fill="#7c3aed"/><circle cx="99" cy="30" r="5" fill="#07040f"/><circle cx="99" cy="30" r="2.2" fill="#a78bfa"/></g>
+  <!-- Node direita meio -->
+  <g><circle cx="100" cy="62" r="9" fill="#6d28d9"/><circle cx="100" cy="62" r="5" fill="#07040f"/><circle cx="100" cy="62" r="2.2" fill="#8b5cf6"/></g>
+  <!-- Node base -->
+  <g><circle cx="38" cy="104" r="7" fill="#6d28d9"/><circle cx="38" cy="104" r="4" fill="#07040f"/><circle cx="38" cy="104" r="1.8" fill="#8b5cf6"/></g>
+  <!-- Node central -->
+  <g><circle cx="62" cy="62" r="22" fill="#8b5cf6" opacity=".12"/><circle cx="62" cy="62" r="15" fill="#8b5cf6"/><circle cx="62" cy="62" r="8.5" fill="#07040f"/><circle cx="62" cy="62" r="3.8" fill="#c4b5fd"/></g>
+</svg>
+        <span style="display:flex;flex-direction:column;line-height:1.1">
+          <span style="font-weight:800;font-size:1.1rem;color:var(--text)">Connect<span style="color:var(--purple-2)">Fluxo</span></span>
+          <small style="font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600">Automação Inteligente</small>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a href="#solucao">Solução</a>
+        <a href="#processo">Como funciona</a>
+        <a href="#segmentos">Segmentos</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <a href="#contato" class="nav-cta">Quero uma automação para meu negócio</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="inicio">
+    <div class="hero-grid">
+      <div class="hero-copy reveal">
+        <span class="eyebrow">Automação com IA para WhatsApp e operação comercial</span>
+        <h1>Automatize seu atendimento, seus agendamentos e seu <span class="accent">follow-up</span> no WhatsApp com mais velocidade, organização e escala.</h1>
+        <p>
+          Criamos automações inteligentes para responder clientes, qualificar leads, confirmar agendas e reduzir tarefas manuais da sua equipe sem perder o toque humano no atendimento.
+        </p>
+        <div class="hero-actions">
+          <a href="#contato" class="btn-primary">Quero automatizar meu negócio</a>
+          <a href="#processo" class="btn-secondary">Ver como funciona</a>
+        </div>
+        <div class="hero-proof">
+          <span><strong>Atendimento 24/7</strong> para não perder oportunidades</span>
+          <span><strong>Mais organização</strong> na jornada do cliente</span>
+          <span><strong>Menos tarefas manuais</strong> para a sua equipe</span>
+        </div>
+      </div>
+
+      <div class="hero-card reveal">
+        <div class="dashboard">
+          <div class="dash-top">
+            <strong>Painel de automação</strong>
+            <span class="status">Operando em tempo real</span>
+          </div>
+          <div class="dash-body">
+            <div class="mini-grid">
+              <div class="mini"><b>24h</b><span>Atendimento ativo</span></div>
+              <div class="mini"><b>+ agilidade</b><span>Respostas automáticas</span></div>
+              <div class="mini"><b>- retrabalho</b><span>Rotina mais leve</span></div>
+            </div>
+            <div class="chat-box">
+              <div class="chat-msg bot">Olá, posso te ajudar com informações, agendamento ou orçamento?</div>
+              <div class="chat-msg user">Quero entender como funciona para minha empresa.</div>
+              <div class="chat-msg bot">Perfeito. Vou fazer algumas perguntas rápidas para identificar a melhor automação para sua operação.</div>
+            </div>
+            <div class="flow-box">
+              <div class="flow-list">
+                <div class="flow-item"><i>1</i> Captura e qualificação do lead</div>
+                <div class="flow-item"><i>2</i> Agendamento e confirmação automática</div>
+                <div class="flow-item"><i>3</i> Follow-up e reativação de contatos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="stats-strip">
+    <div class="stats-grid">
+      <div class="stat-card"><b>Mais leads respondidos</b><span>Seu negócio responde com mais rapidez e reduz contatos perdidos.</span></div>
+      <div class="stat-card"><b>Mais agendas confirmadas</b><span>Lembretes automáticos ajudam a reduzir esquecimentos e faltas.</span></div>
+      <div class="stat-card"><b>Mais eficiência operacional</b><span>Sua equipe para de repetir tarefas e ganha tempo para o que importa.</span></div>
+      <div class="stat-card"><b>Mais controle para crescer</b><span>Você organiza processos sem depender tanto do operacional manual.</span></div>
+    </div>
+  </section>
+
+  <section class="section" id="solucao">
+    <div class="container section-head">
+      <span class="eyebrow">A dor da operação manual</span>
+      <h2>Seu negócio não precisa continuar perdendo tempo com tarefas que já poderiam estar automatizadas.</h2>
+      <p>Quando o atendimento depende de processos manuais, a equipe fica sobrecarregada, os leads esfriam, os retornos atrasam e a experiência do cliente perde consistência.</p>
+    </div>
+    <div class="problem-grid reveal">
+      <div class="pain">
+        <h3>O que está travando sua operação</h3>
+        <ul>
+          <li>Mensagens repetidas consumindo tempo da equipe.</li>
+          <li>Leads sem resposta rápida e sem acompanhamento.</li>
+          <li>Agendamentos confirmados manualmente e com risco de falha.</li>
+          <li>Contatos esquecidos no meio do processo.</li>
+          <li>Falta de padronização no atendimento.</li>
+        </ul>
+      </div>
+      <div class="gain">
+        <h3>O que a automação resolve</h3>
+        <ul>
+          <li>Respostas iniciais mais rápidas e organizadas.</li>
+          <li>Qualificação automática para filtrar melhor as oportunidades.</li>
+          <li>Confirmações e lembretes sem esforço manual.</li>
+          <li>Follow-up mais consistente para não perder oportunidades.</li>
+          <li>Mais tempo para a equipe focar no estratégico.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="solucoes">
+    <div class="container section-head">
+      <span class="eyebrow">Soluções práticas</span>
+      <h2>O que podemos automatizar no seu negócio.</h2>
+      <p>Cada operação tem gargalos diferentes. Por isso, desenhamos automações sob medida para melhorar atendimento, rotina comercial e processos operacionais.</p>
+    </div>
+    <div class="benefits-grid reveal">
+      <div class="benefit reveal"><h3>Agente de IA no WhatsApp</h3><p>Responde clientes, tira dúvidas iniciais e conduz o contato com mais agilidade.</p></div>
+      <div class="benefit reveal"><h3>Qualificação de leads</h3><p>Faz perguntas estratégicas, organiza informações e filtra melhor as oportunidades.</p></div>
+      <div class="benefit reveal"><h3>Agendamento automático</h3><p>Agenda, confirma, lembra e reduz falhas no processo de marcação.</p></div>
+      <div class="benefit reveal"><h3>Follow-up inteligente</h3><p>Retoma contatos, mantém o lead aquecido e evita oportunidades esquecidas.</p></div>
+      <div class="benefit reveal"><h3>Atendimento e suporte automático</h3><p>Padroniza respostas frequentes e acelera o atendimento da operação.</p></div>
+      <div class="benefit reveal"><h3>Automação operacional</h3><p>Integra processos internos para reduzir retrabalho e ganhar produtividade.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="processo">
+    <div class="container section-head">
+      <span class="eyebrow">Como funciona</span>
+      <h2>Uma implantação clara, personalizada e pensada para a realidade da sua operação.</h2>
+      <p>Você não recebe uma solução genérica. Recebe uma automação desenhada com base no seu processo, no seu modelo de atendimento e nos seus objetivos de crescimento.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step reveal">
+        <div class="num">01</div>
+        <h3>Diagnóstico da operação</h3>
+        <p>Mapeamos gargalos, entendemos sua jornada de atendimento e identificamos quais etapas podem ser automatizadas com mais impacto.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">02</div>
+        <h3>Desenho da solução</h3>
+        <p>Estruturamos fluxos, mensagens, regras e integrações para sua operação funcionar com mais clareza, consistência e agilidade.</p>
+      </div>
+      <div class="step reveal">
+        <div class="num">03</div>
+        <h3>Implantação e ajustes</h3>
+        <p>Colocamos a automação para rodar, acompanhamos os pontos críticos e refinamos a experiência para ela evoluir junto com a sua operação.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container section-head">
+      <span class="eyebrow">Benefícios reais</span>
+      <h2>Mais eficiência para sua equipe e uma experiência melhor para o seu cliente.</h2>
+      <p>A proposta não é robotizar sua empresa. É criar uma operação mais inteligente, organizada e preparada para crescer.</p>
+    </div>
+    <div class="benefits-grid reveal">
+      <div class="benefit reveal"><h3>Atendimento mais rápido</h3><p>Seu cliente recebe resposta com mais agilidade, inclusive fora do horário comercial.</p></div>
+      <div class="benefit reveal"><h3>Follow-up com consistência</h3><p>Seus leads deixam de ser esquecidos por falta de retorno.</p></div>
+      <div class="benefit reveal"><h3>Menos sobrecarga para a equipe</h3><p>A rotina fica mais leve e o time ganha tempo para tarefas mais estratégicas.</p></div>
+      <div class="benefit reveal"><h3>Agendamentos mais organizados</h3><p>Confirmações, lembretes e retornos passam a acontecer de forma previsível.</p></div>
+      <div class="benefit reveal"><h3>Jornada comercial mais clara</h3><p>Você entende melhor em que etapa cada contato está.</p></div>
+      <div class="benefit reveal"><h3>Mais escala com controle</h3><p>Seu negócio ganha estrutura para crescer sem depender tanto do improviso operacional.</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="segmentos">
+    <div class="container section-head">
+      <span class="eyebrow">Segmentos atendidos</span>
+      <h2>Automação sob medida para negócios que precisam atender melhor, vender com mais consistência e operar com mais organização.</h2>
+      <p>As automações são personalizadas de acordo com o tipo de operação, a jornada do cliente e os processos que mais consomem tempo da equipe.</p>
+    </div>
+    <div class="segments-grid">
+      <div class="segment"><small>Clínicas e consultórios</small><h3>Agenda, confirmação, lembretes e relacionamento com pacientes</h3><p>Organize sua operação e entregue uma comunicação mais profissional em cada etapa do contato.</p></div>
+      <div class="segment"><small>Escolas e cursos</small><h3>Captação, atendimento e follow-up com pais e alunos</h3><p>Ganhe velocidade na resposta, acompanhe interessados e melhore a jornada comercial com mais consistência.</p></div>
+      <div class="segment"><small>Prestadores de serviço</small><h3>Triagem de leads, orçamento, retorno e acompanhamento comercial</h3><p>Automatize perguntas iniciais, organize solicitações e mantenha o cliente avançando no processo.</p></div>
+      <div class="segment"><small>Empresas comerciais</small><h3>Atendimento mais eficiente e processos mais estáveis</h3><p>Padronize a comunicação, reduza retrabalho e crie uma operação mais segura para crescer.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container section-head">
+      <span class="eyebrow">Prova social</span>
+      <h2>Negócios que automatizam ganham mais clareza, mais agilidade e menos peso operacional.</h2>
+      <p>A automação reduz falhas, melhora a experiência do cliente e ajuda a equipe a trabalhar com mais foco.</p>
+    </div>
+    <div class="testi-wrap">
+      <div class="testi-track">
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Antes, nossa equipe gastava muito tempo confirmando atendimentos e respondendo mensagens repetidas. Com a automação, o processo ficou mais organizado e o atendimento muito mais ágil.</p>
+        <div class="testi-author">
+          <div class="testi-av">CS</div>
+          <div><span class="testi-name">Clínica de Saúde</span><span class="testi-role">Atendimento mais organizado</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Conseguimos responder interessados com mais rapidez e manter o follow-up em dia. Isso trouxe mais previsibilidade para a rotina comercial.</p>
+        <div class="testi-author">
+          <div class="testi-av">EC</div>
+          <div><span class="testi-name">Escola e Cursos</span><span class="testi-role">Mais consistência comercial</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>A automação ajudou a filtrar melhor os contatos e a reduzir tarefas manuais. Hoje o processo está mais claro e muito mais eficiente.</p>
+        <div class="testi-author">
+          <div class="testi-av">PS</div>
+          <div><span class="testi-name">Prestador de Serviço</span><span class="testi-role">Triagem e follow-up</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Nosso atendimento ficou mais padronizado e a equipe ganhou tempo para focar no que realmente exige atenção humana.</p>
+        <div class="testi-author">
+          <div class="testi-av">EC</div>
+          <div><span class="testi-name">Empresa Comercial</span><span class="testi-role">Menos retrabalho</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Antes, nossa equipe gastava muito tempo confirmando atendimentos e respondendo mensagens repetidas. Com a automação, o processo ficou mais organizado e o atendimento muito mais ágil.</p>
+        <div class="testi-author">
+          <div class="testi-av">CS</div>
+          <div><span class="testi-name">Clínica de Saúde</span><span class="testi-role">Atendimento mais organizado</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Conseguimos responder interessados com mais rapidez e manter o follow-up em dia. Isso trouxe mais previsibilidade para a rotina comercial.</p>
+        <div class="testi-author">
+          <div class="testi-av">EC</div>
+          <div><span class="testi-name">Escola e Cursos</span><span class="testi-role">Mais consistência comercial</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>A automação ajudou a filtrar melhor os contatos e a reduzir tarefas manuais. Hoje o processo está mais claro e muito mais eficiente.</p>
+        <div class="testi-author">
+          <div class="testi-av">PS</div>
+          <div><span class="testi-name">Prestador de Serviço</span><span class="testi-role">Triagem e follow-up</span></div>
+        </div>
+      </div>
+      <div class="testimonial">
+        <div class="testi-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <div class="testi-quote">"</div>
+        <p>Nosso atendimento ficou mais padronizado e a equipe ganhou tempo para focar no que realmente exige atenção humana.</p>
+        <div class="testi-author">
+          <div class="testi-av">EC</div>
+          <div><span class="testi-name">Empresa Comercial</span><span class="testi-role">Menos retrabalho</span></div>
+        </div>
+      </div>
+      </div></div>
+    </div>
+</section>
+
+  <section class="section" id="faq">
+    <div class="container section-head">
+      <span class="eyebrow">Perguntas frequentes</span>
+      <h2>Dúvidas comuns antes de automatizar.</h2>
+      <p>Respondemos aqui as principais objeções para você entender como a automação pode funcionar na prática no seu negócio.</p>
+    </div>
+    <div class="faq-grid reveal">
+      <div class="faq-item reveal"><h3>A automação serve para qualquer tipo de empresa?</h3><p>As soluções são personalizadas para a realidade de cada negócio. O que muda é o fluxo, a complexidade e o objetivo da automação.</p></div>
+      <div class="faq-item reveal"><h3>A automação substitui minha equipe?</h3><p>Não. Ela assume tarefas repetitivas e operacionais para que sua equipe tenha mais tempo para atividades estratégicas e atendimento humano quando necessário.</p></div>
+      <div class="faq-item reveal"><h3>É possível automatizar só uma parte do processo?</h3><p>Sim. A automação pode começar por uma etapa específica, como atendimento inicial, agendamento, follow-up ou qualificação de leads.</p></div>
+      <div class="faq-item reveal"><h3>A automação pode funcionar no WhatsApp?</h3><p>Sim. É possível criar fluxos de atendimento, triagem, respostas, lembretes e acompanhamento pelo WhatsApp, conforme a necessidade da operação.</p></div>
+      <div class="faq-item reveal"><h3>Preciso ter conhecimento técnico para usar?</h3><p>Não. A implantação é desenhada para que a solução funcione de forma prática dentro da rotina da sua empresa.</p></div>
+      <div class="faq-item reveal"><h3>Quanto tempo leva para implantar?</h3><p>O prazo depende da complexidade do processo, das integrações e do nível de personalização necessário.</p></div>
+    </div>
+  </section>
+
+
+  <!-- ── WHATSAPP FLUTUANTE ── -->
+  <a href="https://wa.me/5581999999999?text=Olá!%20Vim%20pelo%20site%20da%20ConnectFluxo%20e%20quero%20saber%20mais." class="wa-float" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    <span>Falar pelo WhatsApp</span>
+  </a>
+
+  <!-- ── SEÇÃO LEAD ── -->
+  <section class="lead-section reveal" id="contato">
+    <div class="lead-inner">
+      <div class="lead-copy reveal">
+        <span class="eyebrow">Vamos conversar</span>
+        <h2>Pronto para automatizar sua operação e ganhar mais agilidade no atendimento?</h2>
+        <p>Preencha o formulário e nossa equipe vai entender seu processo, identificar oportunidades de automação e mostrar o que faz mais sentido para o seu negócio.</p>
+        <div class="lead-proof">
+          <div class="lead-proof-item">Diagnóstico da sua operação</div>
+          <div class="lead-proof-item">Solução personalizada para o seu negócio</div>
+          <div class="lead-proof-item">Sem compromisso de contratação</div>
+          <div class="lead-proof-item">Retorno em até 24 horas</div>
+        </div>
+      </div>
+      <div class="lead-form-card reveal">
+        <div id="lead-form-wrap">
+          <h3>Fale com a ConnectFluxo</h3>
+          <p>Preencha os dados abaixo e entraremos em contato para entender sua operação e indicar a melhor automação para o seu negócio.</p>
+          <form id="lead-form" onsubmit="handleLeadSubmit(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nome</label>
+                <input type="text" placeholder="Seu nome completo" required/>
+              </div>
+              <div class="form-group">
+                <label>WhatsApp</label>
+                <input type="tel" placeholder="(81) 99999-9999" required/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>E-mail</label>
+              <input type="email" placeholder="seu@email.com.br" required/>
+            </div>
+            <div class="form-group">
+              <label>Qual solução você procura?</label>
+              <select required>
+                <option value="" disabled selected>Selecione uma opção</option>
+                <option>Agente de IA no WhatsApp</option>
+                <option>Agendamento automático</option>
+                <option>Automação de notas fiscais</option>
+                <option>Qualificação de leads</option>
+                <option>Atendimento e suporte automático</option>
+                <option>Outra solução</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Conte mais sobre sua necessidade</label>
+              <textarea placeholder="Descreva brevemente o processo que quer automatizar..."></textarea>
+            </div>
+            <button type="submit" class="btn-submit">Quero automatizar minha operação →</button>
+            <p class="form-note">🔒 Seus dados estão seguros. Não fazemos spam.</p>
+          </form>
+        </div>
+        <div class="form-success" id="form-success">
+          <div class="success-icon">✅</div>
+          <h4>Mensagem enviada!</h4>
+          <p>Recebemos seu contato e nossa equipe retornará em até 24 horas.<br>Fique de olho no seu WhatsApp e e-mail!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <footer>
+    <div class="footer-inner">
+      <div>© 2026 ConnectFluxo. Automação inteligente para operações modernas.</div>
+      <div>WhatsApp • Instagram • E-mail</div>
+    </div>
+  </footer>
+
+<script>
+const cur=document.getElementById('cur'),curR=document.getElementById('cur-r');
+if(cur && curR && window.matchMedia('(pointer:fine)').matches){
+  let mx=window.innerWidth/2,my=window.innerHeight/2,rx=mx,ry=my;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px'});
+  (function loop(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(loop)})();
+  document.querySelectorAll('a,button,.btn-primary,.btn-secondary,.nav-cta,.solution-card,.segment-card,.faq-item,.metric').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cur.style.width='20px';cur.style.height='20px';curR.style.width='58px';curR.style.height='58px';curR.style.borderColor='rgba(198,168,255,.75)'});
+    el.addEventListener('mouseleave',()=>{cur.style.width='12px';cur.style.height='12px';curR.style.width='40px';curR.style.height='40px';curR.style.borderColor='rgba(169,124,255,.45)'});
+  });
+} else {
+  if(cur) cur.style.display='none';
+  if(curR) curR.style.display='none';
+}
+
+window.addEventListener('scroll',()=>{
+  const nav=document.querySelector('nav');
+  if(nav) nav.classList.toggle('stuck', window.scrollY>40);
+});
+
+const canvas=document.getElementById('bg-canvas');
+if(canvas){
+  const ctx=canvas.getContext('2d');
+  let W,H,pts=[],mpx=window.innerWidth/2,mpy=260;
+  function sizeCanvas(){
+    const hero=document.querySelector('.hero');
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=hero ? Math.max(hero.offsetHeight, 720) : window.innerHeight;
+  }
+  class Pt{
+    constructor(){this.reset()}
+    reset(){
+      this.x=Math.random()*W; this.y=Math.random()*H;
+      this.vx=(Math.random()-.5)*.35; this.vy=(Math.random()-.5)*.35;
+      this.r=Math.random()*1.8+.6; this.a=Math.random()*.32+.08; this.baseA=this.a;
+    }
+  }
+  function init(){ pts=[]; const n=Math.max(42, Math.floor(W*H/22000)); for(let i=0;i<n;i++) pts.push(new Pt()); }
+  function resizeAll(){ sizeCanvas(); init(); }
+  resizeAll();
+  window.addEventListener('resize', resizeAll);
+  window.addEventListener('mousemove',e=>{mpx=e.clientX;mpy=e.clientY});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>W) p.vx*=-1;
+      if(p.y<0||p.y>H) p.vy*=-1;
+      const dx=mpx-p.x, dy=mpy-p.y, d=Math.hypot(dx,dy) || 1;
+      if(d<180){ p.vx+=dx/d*.006; p.vy+=dy/d*.006; p.a=Math.min(p.baseA*2.2,.72); }
+      else { p.a += (p.baseA-p.a)*.05; }
+      const spd=Math.hypot(p.vx,p.vy);
+      if(spd>.7){ p.vx*=.7/spd; p.vy*=.7/spd; }
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fillStyle=`rgba(169,124,255,${p.a})`; ctx.fill();
+    });
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, d=Math.hypot(dx,dy);
+        if(d<120){
+          ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[j].x,pts[j].y);
+          ctx.strokeStyle=`rgba(143,92,255,${.16*(1-d/120)})`; ctx.lineWidth=.6; ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+const observer = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:.12, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach((el,i)=>{
+  el.style.transitionDelay = `${(i%4)*.08}s`;
+  observer.observe(el);
+});
+
+
+function handleLeadSubmit(e) {
+  e.preventDefault();
+  const wrap = document.getElementById('lead-form-wrap');
+  const success = document.getElementById('form-success');
+  wrap.style.opacity = '0';
+  wrap.style.transition = 'opacity .3s';
+  setTimeout(() => {
+    wrap.style.display = 'none';
+    success.style.display = 'block';
+    success.style.animation = 'cffadeup .5s ease both';
+  }, 300);
+}
+
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
+  const href=a.getAttribute('href');
+  if(href && href !== '#'){
+    const t=document.querySelector(href);
+    if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth'}); }
+  }
+}));
+</script>
+
+</body>
+</html>
