@@ -1116,19 +1116,67 @@ document.querySelectorAll('.reveal').forEach((el,i)=>{
   observer.observe(el);
 });
 
+<script>
+const N8N_WEBHOOK_URL = "COLE_AQUI_A_URL_DO_WEBHOOK_DO_N8N";
 
-function handleLeadSubmit(e) {
-  e.preventDefault();
-  const wrap = document.getElementById('lead-form-wrap');
-  const success = document.getElementById('form-success');
-  wrap.style.opacity = '0';
-  wrap.style.transition = 'opacity .3s';
-  setTimeout(() => {
-    wrap.style.display = 'none';
-    success.style.display = 'block';
-    success.style.animation = 'cffadeup .5s ease both';
-  }, 300);
+const leadForm = document.getElementById("lead-form");
+const leadFormWrap = document.getElementById("lead-form-wrap");
+const formSuccess = document.getElementById("form-success");
+const submitBtn = document.getElementById("lead-submit-btn");
+
+if (leadForm) {
+  leadForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(leadForm);
+
+    const payload = {
+      nome: formData.get("nome")?.toString().trim() || "",
+      whatsapp: formData.get("whatsapp")?.toString().trim() || "",
+      email: formData.get("email")?.toString().trim() || "",
+      solucao: formData.get("solucao")?.toString().trim() || "",
+      necessidade: formData.get("necessidade")?.toString().trim() || "",
+      origem: "site-connectfluxo",
+      pagina: window.location.href,
+      data_envio: new Date().toISOString()
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Enviando...";
+
+    try {
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao enviar o formulário.");
+      }
+
+      leadFormWrap.style.opacity = "0";
+      leadFormWrap.style.transition = "opacity .3s";
+
+      setTimeout(() => {
+        leadFormWrap.style.display = "none";
+        formSuccess.style.display = "block";
+        formSuccess.style.animation = "cffadeup .5s ease both";
+      }, 300);
+
+      leadForm.reset();
+    } catch (error) {
+      alert("Não foi possível enviar agora. Tente novamente em instantes.");
+      console.error(error);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Quero automatizar meu negócio →";
+    }
+  });
 }
+</script>
 
 document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
   const href=a.getAttribute('href');
